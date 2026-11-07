@@ -104,7 +104,8 @@ def growth_table(series, years=10):
 
 
 def render_table(name, cik, tag, rows):
-    lines = [f"{name} — CIK {cik:0>10}", f"annual revenue, USD millions (10-K, us-gaap:{tag})", ""]
+    header = name if cik is None else f"{name} — CIK {cik:0>10}"
+    lines = [header, f"annual revenue, USD millions (10-K, us-gaap:{tag})", ""]
     for fy, val, yoy in rows:
         yoy_s = f"{yoy:+.1f}%" if yoy is not None else "—"
         lines.append(f"FY{fy}  {val / 1e6:>12,.0f}  {yoy_s:>8}")
@@ -118,18 +119,35 @@ def render_csv(rows, path):
         w.writerows(rows)
 
 
+def load_recorded(path):
+    """Replay source for --from-file: either a bare list of XBRL unit entries
+    or a {"entityName", "cik", "tag", "entries"} wrapper (as saved by
+    examples/aapl_recorded.json)."""
+    data = json.load(open(path, encoding="utf-8"))
+    if isinstance(data, list):
+        return None, None, None, data
+    return data.get("entityName"), data.get("cik"), data.get("tag"), data["entries"]
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(description="annual revenue history from SEC EDGAR")
     p.add_argument("ticker", help="stock ticker, e.g. AAPL")
     p.add_argument("--years", type=int, default=10, help="fiscal years to show (default 10)")
     p.add_argument("--csv", metavar="PATH", help="also write a CSV to PATH")
+    p.add_argument("--from-file", metavar="PATH",
+                   help="replay recorded data from PATH instead of querying EDGAR (offline demos, tests)")
     args = p.parse_args(argv)
 
     try:
-        ticker_map = load_ticker_map()
-        cik, title = find_cik(args.ticker, ticker_map)
-        facts = http_json(FACTS_URL.format(cik=cik))
-        tag, series = revenue_history(facts)
+        if args.from_file:
+            name, cik, tag, entries = load_recorded(args.from_file)
+            series = annual_series(entries)
+        else:
+            ticker_map = load_ticker_map()
+            cik, title = find_cik(args.ticker, ticker_map)
+            facts = http_json(FACTS_URL.format(cik=cik))
+            tag, series = revenue_history(facts)
+            name = facts["entityName"]
         rows = growth_table(series, args.years)
         if not rows:
             raise EdgarError("no 10-K revenue data found for this company")
@@ -139,14 +157,14 @@ def main(argv=None):
     except urllib.error.HTTPError as e:
         hint = (
             "SEC blocks some networks (VPNs, cloud IPs) and rate-limits bursts — "
-            "try again later or from a different connection"
+            "try again later, from a different connection, or replay with --from-file"
             if e.code == 403
             else "check the ticker or retry"
         )
         print(f"error: EDGAR returned HTTP {e.code} — {hint}", file=sys.stderr)
         return 1
 
-    print(render_table(facts["entityName"], cik, tag, rows))
+    print(render_table(name or args.ticker.upper(), cik, tag or "(recorded)", rows))
     if args.csv:
         render_csv(rows, args.csv)
         print(f"\ncsv written to {args.csv}")

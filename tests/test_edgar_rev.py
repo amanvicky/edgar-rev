@@ -97,7 +97,8 @@ def test_recorded_aapl_revenues_end_to_end():
     import json
     from pathlib import Path
 
-    entries = json.loads((Path(__file__).parent / "fixtures" / "aapl_revenues_recorded.json").read_text())
+    recorded = json.loads((Path(__file__).parent.parent / "examples" / "aapl_recorded.json").read_text())
+    entries = recorded["entries"]
     series = er.annual_series(entries)
     assert series == {
         2017: 229_234_000_000,
@@ -130,3 +131,19 @@ def test_main_happy_path(monkeypatch, capsys, tmp_path):
     out = capsys.readouterr().out
     assert "Apple Inc." in out and "FY2023" in out and "383,285" in out
     assert out_csv.exists()
+
+
+def test_from_file_replay(tmp_path, capsys):
+    import shutil
+
+    replay = tmp_path / "replay.json"
+    shutil.copy("examples/aapl_recorded.json", replay)
+    assert er.main(["AAPL", "--from-file", str(replay)]) == 0
+    out = capsys.readouterr().out
+    assert "Apple Inc. — CIK 0000320193" in out and "FY2026" in out and "478,834" in out
+
+
+def test_render_table_without_cik():
+    rows = [(2023, 100_000_000, None)]
+    out = er.render_table("Some Co", None, "(recorded)", rows)
+    assert "Some Co" in out and "CIK" not in out

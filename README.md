@@ -23,7 +23,9 @@ FY2026       478,834    +15.1%
 $ python edgar_rev.py TSLA --years 5 --csv tsla.csv
 ```
 
-The output above is the tool's real output — Apple's FY2026 figures as filed with the SEC on 2026-11-03.
+![edgar-rev in a terminal — Apple's FY2017–FY2026 revenue from EDGAR](docs/edgar-rev-aapl.png)
+
+The output above is the tool's real output — Apple's FY2026 figures as filed with the SEC on 2026-11-03. The screenshot replays it from `examples/aapl_recorded.json` with `--from-file`, the same recorded data the test suite uses — handy offline, and the reliable path when SEC blocks your network.
 
 ## Why
 
@@ -47,6 +49,7 @@ edgar-rev MSFT --csv msft.csv
 | `ticker` | stock ticker (`AAPL`, `TSLA`, …) — unknown tickers get a "did you mean" list |
 | `--years N` | fiscal years to show (default 10) |
 | `--csv PATH` | also write the table to a CSV |
+| `--from-file PATH` | replay recorded data from PATH instead of querying EDGAR — offline demos, and the workaround when SEC blocks your network |
 
 ## EDGAR etiquette
 
