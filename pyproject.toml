@@ -1,0 +1,14 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "edgar-rev"
+version = "0.1.0"
+description = "A public company's annual revenue history from SEC EDGAR, one command, zero dependencies"
+requires-python = ">=3.9"
+license = { file = "LICENSE" }
+authors = [{ name = "Aman Elugam" }]
+
+[project.scripts]
+edgar-rev = "edgar_rev:main"
