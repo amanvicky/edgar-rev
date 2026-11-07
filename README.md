@@ -1,5 +1,7 @@
 # edgar-rev
 
+[![CI](https://github.com/amanvicky/edgar-rev/actions/workflows/ci.yml/badge.svg)](https://github.com/amanvicky/edgar-rev/actions/workflows/ci.yml)
+
 One command, ten years of a public company's revenue — straight from SEC EDGAR. No API key, no account, no dependencies: one Python file, standard library only.
 
 ```bash
